@@ -28,104 +28,36 @@ namespace Safe_Campus.Controllers
             _configuration = configuration;
             _userService = userService;
         }
-        [HttpGet, Authorize]
-        public ActionResult GetMyName() { 
-            return Ok(_userService.GetMyName());
-        }
-
-        // POST api/<UserController>
-        [HttpPost("Student-Register"), Authorize(Roles ="Admin")]
-
-        public async Task<ActionResult<User>> RegisterStudent(Student request)
-        {
-            User user = new User();
-            if (_userService.CheckUser(request.UserName))
-            {
-                return BadRequest("User Already exists !");
-            }
-            else if (request.Role == "Admin")
-            {
-                return BadRequest("Invalid Input!");
-            }
-            //encrypting the password
-            string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.PasswordHash);
-            //storing the data on the database
-            user.PasswordHash = passwordHash;
-            user.UserName = request.UserName;
-            user.Role = request.Role;
-            user.FirstName = request.FirstName;
-            user.LastName = request.LastName;
-            user.ProfilePicture = request.ProfilePicture;
-            user.ContactNumber = request.ContactNumber;
-            user.Sex = request.Sex;
-            user.AdmissionType = request.AdmissionType;
-            user.StudyLevel = request.StudyLevel;
-            user.Department = request.Department;
-            user.StartDate = request.StartDate;
-            user.EndDate = request.GraduateDate; 
-
-            await  _userService.Create(user);
-            return CreatedAtAction(nameof(RegisterStudent), user);
-        }
-
-        //Post api/<UserController>
-        [HttpPost("Guard-Register"), Authorize(Roles ="Admin")]
-
-        public async Task<ActionResult<User>> RegisterGuard(GuardDto request)
-        {
-            User user = new User();
-            if (_userService.CheckUser(request.UserName))
-            {
-                return BadRequest("User Already exists !");
-            }
-            else if (request.Role == "Admin")
-            {
-                return BadRequest("Invalid Input!");
-            }
-            //encrypting the password 
-            string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.PasswordHash);
-            //storing the data on database
-            user.PasswordHash = passwordHash;
-            user.UserName = request.UserName;
-            user.Role = request.Role;
-            user.FirstName = request.FirstName;
-            user.LastName = request.LastName;
-            user.ProfilePicture = request.ProfilePicture;
-            user.ContactNumber = request.ContactNumber;
-            user.Sex = request.Sex;
-
-            await _userService.Create(user);
-            return CreatedAtAction(nameof(RegisterStudent), user);
-        }
-
+        
         // POST api/<UserController>
         [HttpPost("Login")]
-        public ActionResult<string> Login(UserDto request)
+        public ActionResult<IEnumerable<LoginResponse>> Login(UserDto request)
         {
             //accessing the user data from database based on the userNAme
-            var user = _userService.GetByName(request.UserName);
+            var user =  _userService.GetByName(request.UserName);
 
             if (user==null)
             {
                 return BadRequest("The user doesn't exist!");
 
             }
-            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            else if (!BCrypt.Net.BCrypt.Verify(request.Password,user.PasswordHash))
             {
                 return BadRequest("Incorrect password !");
             }
+
             //creating a token
             string token = CreateToken(request.UserName, user.Role);
             var refreshToken = GenerateRefreshToken();
             setRefreshToken(refreshToken, user);
-
-            return Ok(token);
+            var response = new LoginResponse { Token=token, Role=user.Role};
+            return Ok(response );
 
         }
 
         // POST api/<UserController>
-        [HttpPost("Refresh-Token")]
-        public async Task<ActionResult<string>> RefreshToken()
+        [HttpPost("Refresh-Token"), Authorize]
+        public async Task<ActionResult<LoginResponse>> RefreshToken()
         {
 
             var refreshToken = Request.Cookies["refreshToken"];
@@ -195,7 +127,7 @@ namespace Safe_Campus.Controllers
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
             var token = new JwtSecurityToken(
                 claims: claims,
-                expires: DateTime.UtcNow.AddSeconds(30),
+                expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: creds
 
                 );

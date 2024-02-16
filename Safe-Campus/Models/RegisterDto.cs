@@ -1,6 +1,6 @@
 ﻿namespace Safe_Campus.Models
 {
-    public class GuardDto
+    public class RegisterDto
     {
         public required string UserName { get; set; }
         public required string PasswordHash { get; set; }

@@ -7,15 +7,16 @@ namespace Safe_Campus.Services
     {
         
         Task Create(User user);
-        Task<List<User>> GetAll(string role);
+        Task<List<User>> GetStudent();
+        Task<List<User>> GetGuard();
         bool CheckUser(string userName);
-        User GetByName(string userName);
-        Task<User> GetById(string Id);
+        User  GetByName(string userName);
+        Task<User> Get(string Id);
         User GetByToken(string token);
-        void Update(string Id, User user);
-        void UpdateRefreshToken(User user);
-        void Remove(string Id);
-        string GetMyName();
+        Task Update(string Id, User user);
+        Task UpdateRefreshToken(User user);
+        Task RemoveUser(string Id);
+        Task UpdateImage(string Id, string imageUrl);
 
 
 

@@ -30,16 +30,6 @@ namespace Safe_Campus.Models
         public string? ContactNumber { get; set; } 
         [BsonElement("sex")]
         public string? Sex { get; set; } 
-        [BsonElement("admissionType")]
-        public string? AdmissionType { get; set; }
-        [BsonElement("studyLevel")]
-        public string? StudyLevel { get; set; }
-        [BsonElement("department")]
-        public string? Department { get; set; } 
-        [BsonElement("issuedDate")]
-        public DateTime? StartDate { get; set; }
-        [BsonElement("EndDate")]
-        public DateTime? EndDate { get; set; }
     }
 
 

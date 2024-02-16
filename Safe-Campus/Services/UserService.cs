@@ -14,12 +14,12 @@ namespace Safe_Campus.Services
         private readonly IMongoCollection<User> _userCollection;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public UserService(IOptions<CampusDatabaseSettings> settings, IHttpContextAccessor httpContextAccessor)
+        public UserService(IOptions<CampusDatabaseSettings> settings)
         {
             var mongoClient = new MongoClient(settings.Value.ConnectionString);
             var database = mongoClient.GetDatabase(settings.Value.DatabaseName);
             _userCollection = database.GetCollection<User>(settings.Value.CollectionsName);
-            _httpContextAccessor = httpContextAccessor;
+            
         }
         public async Task Create(User user)
         {
@@ -28,12 +28,6 @@ namespace Safe_Campus.Services
            
         }
         //Get all user based on their role
-        public async Task<List<User>> GetAll(string role)
-        {
-            
-                return await _userCollection.Find(_ => true && _.Role==role).ToListAsync();
-
-        }
 
         public  bool CheckUser(string userName)
         {
@@ -48,10 +42,10 @@ namespace Safe_Campus.Services
         }
         public User GetByName(string userName)
         {
-            var existingUser = _userCollection.Find(i=>true && i.UserName== userName).FirstOrDefault();
-            return existingUser;
+            var user = _userCollection.Find(i => i.UserName == userName).FirstOrDefault();
+            return user;
         }
-        public async Task<User> GetById(string Id)
+        public async Task<User> Get(string Id)
         {
             return await _userCollection.FindAsync(i =>true && i.Id == Id).Result.FirstOrDefaultAsync();
         }
@@ -59,18 +53,18 @@ namespace Safe_Campus.Services
         {
             return _userCollection.Find(i=>true && i.RefreshToken.Equals(token)).FirstOrDefault();
         }
-        public async void Remove(string Id)
+        public async Task RemoveUser(string Id)
         {
             await _userCollection.DeleteOneAsync(i =>true && i.Id == Id);
         }
         
-        public async void Update(string Id, User user)
+        public async Task Update(string Id, User user)
         {
 
             await _userCollection.ReplaceOneAsync(i => true && i.Id ==Id, user);
         }
 
-        public async void UpdateRefreshToken(User user)
+        public async Task UpdateRefreshToken(User user)
         {
             var existingUser = _userCollection.Find(i => true && i.UserName == user.UserName).FirstOrDefault();
 
@@ -79,16 +73,24 @@ namespace Safe_Campus.Services
             existingUser.RefreshTokenExpires = user.RefreshTokenExpires;
             await _userCollection.ReplaceOneAsync(i => true && i.Id == existingUser.Id, existingUser);
         }
-        public string GetMyName()
+
+        public async Task UpdateImage(string Id, string imageUrl)
         {
-            var result = string.Empty;
-            if(_httpContextAccessor.HttpContext is not null)
-            {
-                result = _httpContextAccessor.HttpContext.User.FindFirstValue(ClaimTypes.Name);
-                
-            }
-            
-            return result;
+            var existingUser = _userCollection.Find(i => i.Id == Id).FirstOrDefault();
+            existingUser.ProfilePicture=imageUrl;
+            await _userCollection.ReplaceOneAsync(i => true && i.Id == Id, existingUser);
         }
+
+        public async Task<List<User>> GetStudent()
+        {
+            return await _userCollection.Find(i => true && i.Role=="Student").ToListAsync();
+        }
+
+        public async Task<List<User>> GetGuard()
+        {
+            return await _userCollection.Find(i => i.Role == "Guard").ToListAsync();
+        }
+
+       
     }   
 }

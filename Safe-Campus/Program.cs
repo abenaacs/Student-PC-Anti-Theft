@@ -2,6 +2,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Safe_Campus.Models;
 using Safe_Campus.Services;
+using SafeCampus.Services;
 using Swashbuckle.AspNetCore.Filters;
 using System.Text;
 
@@ -33,9 +34,28 @@ builder.Services.AddAuthentication().AddJwtBearer(option =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetSection("Jwt:Token").Value!))
     };
 });
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Student", policy =>
+    {
+        policy.RequireRole("Student");
+    });
+    options.AddPolicy("Guard", policy =>
+    {
+        policy.RequireRole("Guard");
+    });
+    options.AddPolicy("Admin", policy =>
+    {
+        policy.RequireRole("Admin");
+    });
+});
       //configuring our database setting
 builder.Services.Configure<CampusDatabaseSettings>(builder.Configuration.GetSection("CampusDatabaseSettings"));
 builder.Services.AddScoped<IUserService,UserService>();
+builder.Services.AddSingleton<LaptopService>();
+builder.Services.AddSingleton<ReportService>();
+builder.Services.AddSingleton<TrackService>();
+
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
